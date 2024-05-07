@@ -2,5 +2,29 @@
 name = "qiankun-node"
 version = "0.1.0"
 edition = "2021"
+publish = false
+
 
 [dependencies]
+qiankun-runtime = { path = "../runtime" }
+
+clap = { version = "4.5.4", features = ["derive"] }
+
+# core client
+sc-cli = "0.40.0"
+sc-service = "0.39.0"
+sc-executor = "0.36.0"
+sc-consensus = "0.37.0"
+sc-transaction-pool = "32.0.0"
+sc-consensus-grandpa = "0.23.0"
+sc-telemetry = "18.0.0"
+sc-consensus-aura = "0.38.0"
+
+# primitives
+sp-timestamp = "30.0.0"
+
+[build-dependencies]
+substrate-build-script-utils = "11.0.0"
+
+[features]
+default = []
