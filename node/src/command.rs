@@ -1,5 +1,5 @@
+use crate::cli::Cli;
 use sc_cli::{ChainSpec, SubstrateCli};
-use crate::cli::{Cli, Subcommand};
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -7,7 +7,7 @@ impl SubstrateCli for Cli {
     }
 
     fn impl_version() -> String {
-        env!("QIANKUN_CLI_IMPL_VERSION").into()
+        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
     }
 
     fn description() -> String {
@@ -26,20 +26,19 @@ impl SubstrateCli for Cli {
         2024
     }
 
-    fn load_spec(&self, id: &str) -> Result<Box<dyn ChainSpec>, String> {
+    fn load_spec(&self, _id: &str) -> Result<Box<dyn ChainSpec>, String> {
         todo!()
     }
 }
 
 pub fn run() -> sc_cli::Result<()> {
     let cli = Cli::from_args();
-    
+
     match &cli.subcommand {
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| async move {
-
-            })
+            runner.run_node_until_exit(|config| async move {})
         }
+        _ => Ok(()),
     }
 }

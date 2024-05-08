@@ -27,7 +27,7 @@ use sp_runtime::{
     create_runtime_str, generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature,
+    ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature, OpaqueExtrinsic,
 };
 use sp_std::prelude::*;
 use sp_weights::Weight;
@@ -89,6 +89,7 @@ type UncheckedExtrinsic =
     generic::UncheckedExtrinsic<Address, RuntimeCall, MultiSignature, SignedExtra>;
 
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+pub type OpaqueBlock = generic::Block<Header, OpaqueExtrinsic>;
 
 type RuntimeExecutive =
     Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
@@ -258,6 +259,7 @@ pub mod interface {
     use frame_system;
 
     pub type Block = super::Block;
+    pub type OpaqueBlock = super::OpaqueBlock;
     pub type AccountId = <Runtime as frame_system::Config>::AccountId;
     pub type Nonce = <Runtime as frame_system::Config>::Nonce;
     pub type Hash = <Runtime as frame_system::Config>::Hash;

@@ -6,22 +6,26 @@ publish = false
 
 
 [dependencies]
-qiankun-runtime = { path = "../runtime" }
 
 clap = { version = "4.5.4", features = ["derive"] }
 
-# core client
-sc-cli = "0.40.0"
-sc-service = "0.39.0"
-sc-executor = "0.36.0"
-sc-consensus = "0.37.0"
-sc-transaction-pool = "32.0.0"
-sc-consensus-grandpa = "0.23.0"
-sc-telemetry = "18.0.0"
-sc-consensus-aura = "0.38.0"
+# runtime
+runtime = { package = "qiankun-runtime", path = "../runtime" }
 
 # primitives
-sp-timestamp = "30.0.0"
+sp-timestamp = "31.0.0"
+sp-io = "35.0.0"
+
+# core client
+sc-cli = "0.41.0"
+sc-service = "0.40.0"
+sc-executor = "0.37.0"
+sc-transaction-pool = "33.0.0"
+sc-telemetry = "19.0.0"
+sc-consensus = "0.38.0"
+sc-consensus-grandpa = "0.24.0"
+sc-consensus-aura = "0.39.0"
+sc-consensus-manual-seal = "0.40.0"
 
 [build-dependencies]
 substrate-build-script-utils = "11.0.0"
