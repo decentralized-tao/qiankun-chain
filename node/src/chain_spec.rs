@@ -35,7 +35,7 @@ fn testnet_genesis() -> Value {
         .collect::<Vec<_>>();
 
     json!({
-        "balanaces": BalancesConfig { balances},
+        "balances": BalancesConfig { balances},
         "sudo": SudoConfig { key: Some(AccountKeyring::Alice.to_account_id())},
     })
 }
