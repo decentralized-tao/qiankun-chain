@@ -1,7 +1,9 @@
-mod command;
+mod chain_spec;
 mod cli;
+mod command;
+mod rpc;
 mod service;
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> sc_cli::Result<()> {
+    command::run()
 }

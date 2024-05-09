@@ -1,8 +1,16 @@
+use futures::FutureExt;
+
 use runtime::{self, interface::OpaqueBlock as Block, RuntimeApi};
+
+use sc_client_api::backend::Backend;
 use sc_executor::WasmExecutor;
-use sc_service::{error::Error as ServiceError, Configuration};
+use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
+use sc_transaction_pool_api::OffchainTransactionPoolFactory;
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
+
+use crate::cli::Consensus;
 
 type HostFunctions = sp_io::SubstrateHostFunctions;
 
@@ -76,4 +84,170 @@ pub fn new_partial(config: &Configuration) -> Result<Service, ServiceError> {
         transaction_pool,
         other: (telemetry),
     })
+}
+
+pub fn new_full<Network: sc_network::NetworkBackend<Block, <Block as BlockT>::Hash>>(
+    config: Configuration,
+    consensus: Consensus,
+) -> Result<TaskManager, ServiceError> {
+    let sc_service::PartialComponents {
+        client,
+        backend,
+        mut task_manager,
+        import_queue,
+        keystore_container,
+        select_chain,
+        transaction_pool,
+        other: mut telemetry,
+    } = new_partial(&config)?;
+
+    let net_config = sc_network::config::FullNetworkConfiguration::<
+        Block,
+        <Block as BlockT>::Hash,
+        Network,
+    >::new(&config.network);
+
+    let metrics = Network::register_notification_metrics(
+        config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+    );
+
+    let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &config,
+            net_config,
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            spawn_handle: task_manager.spawn_handle(),
+            import_queue,
+            block_announce_validator_builder: None,
+            warp_sync_params: None,
+            block_relay: None,
+            metrics: metrics,
+        })?;
+
+    if config.offchain_worker.enabled {
+        task_manager.spawn_handle().spawn(
+            "offchain-workers-runner",
+            "offchain-worker",
+            sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+                runtime_api_provider: client.clone(),
+                keystore: Some(keystore_container.keystore()),
+                offchain_db: backend.offchain_storage(),
+                transaction_pool: Some(OffchainTransactionPoolFactory::new(
+                    transaction_pool.clone(),
+                )),
+                network_provider: Arc::new(network.clone()),
+                is_validator: config.role.is_authority(),
+                enable_http_requests: true,
+                custom_extensions: |_| vec![],
+            })
+            .run(client.clone(), task_manager.spawn_handle())
+            .boxed(),
+        );
+    }
+
+    let rpc_extensions_builder = {
+        let client = client.clone();
+        let pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, _| {
+            let deps = crate::rpc::FullDeps {
+                client: client.clone(),
+                pool: pool.clone(),
+                deny_unsafe,
+            };
+            crate::rpc::create_full(deps).map_err(Into::into)
+        })
+    };
+
+    let prometheus_registry = config.prometheus_registry().cloned();
+
+    let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        config,
+        client: client.clone(),
+        backend,
+        task_manager: &mut task_manager,
+        keystore: keystore_container.keystore(),
+        transaction_pool: transaction_pool.clone(),
+        rpc_builder: rpc_extensions_builder,
+        network,
+        system_rpc_tx,
+        tx_handler_controller,
+        sync_service,
+        telemetry: telemetry.as_mut(),
+    })?;
+
+    let proposer = sc_basic_authorship::ProposerFactory::new(
+        task_manager.spawn_handle(),
+        client.clone(),
+        transaction_pool.clone(),
+        prometheus_registry.as_ref(),
+        telemetry.as_ref().map(|x| x.handle()),
+    );
+
+    match consensus {
+        Consensus::InstantSeal => {
+            let params = sc_consensus_manual_seal::InstantSealParams {
+                block_import: client.clone(),
+                env: proposer,
+                client,
+                pool: transaction_pool,
+                select_chain,
+                consensus_data_provider: None,
+                create_inherent_data_providers: move |_, ()| async move {
+                    Ok(sp_timestamp::InherentDataProvider::from_system_time())
+                },
+            };
+
+            let authorship_future = sc_consensus_manual_seal::run_instant_seal(params);
+
+            task_manager.spawn_essential_handle().spawn_blocking(
+                "instant-seal",
+                None,
+                authorship_future,
+            );
+        }
+        Consensus::ManualSeal(block_time) => {
+            let (mut sink, commands_stream) = futures::channel::mpsc::channel(1024);
+            task_manager
+                .spawn_handle()
+                .spawn("block_authoring", None, async move {
+                    loop {
+                        futures_timer::Delay::new(std::time::Duration::from_millis(block_time))
+                            .await;
+                        sink.try_send(sc_consensus_manual_seal::EngineCommand::SealNewBlock {
+                            create_empty: true,
+                            finalize: true,
+                            parent_hash: None,
+                            sender: None,
+                        })
+                        .unwrap();
+                    }
+                });
+
+            let params = sc_consensus_manual_seal::ManualSealParams {
+                block_import: client.clone(),
+                env: proposer,
+                client,
+                pool: transaction_pool,
+                select_chain,
+                commands_stream: Box::pin(commands_stream),
+                consensus_data_provider: None,
+                create_inherent_data_providers: move |_, ()| async move {
+                    Ok(sp_timestamp::InherentDataProvider::from_system_time())
+                },
+            };
+
+            let authorship_future = sc_consensus_manual_seal::run_manual_seal(params);
+
+            task_manager.spawn_essential_handle().spawn_blocking(
+                "manual-seal",
+                None,
+                authorship_future,
+            );
+        }
+    }
+
+    network_starter.start_network();
+    Ok(task_manager)
 }

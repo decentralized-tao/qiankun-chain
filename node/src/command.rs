@@ -1,4 +1,4 @@
-use crate::cli::Cli;
+use crate::{chain_spec, cli::Cli, service};
 use sc_cli::{ChainSpec, SubstrateCli};
 
 impl SubstrateCli for Cli {
@@ -26,8 +26,13 @@ impl SubstrateCli for Cli {
         2024
     }
 
-    fn load_spec(&self, _id: &str) -> Result<Box<dyn ChainSpec>, String> {
-        todo!()
+    fn load_spec(&self, id: &str) -> Result<Box<dyn ChainSpec>, String> {
+        Ok(match id {
+            "dev" => Box::new(chain_spec::developement_config()?),
+            path => Box::new(chain_spec::ChainSpec::from_json_file(
+                std::path::PathBuf::from(path),
+            )?),
+        })
     }
 }
 
@@ -37,7 +42,20 @@ pub fn run() -> sc_cli::Result<()> {
     match &cli.subcommand {
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| async move {})
+            runner.run_node_until_exit(|config| async move {
+                match config.network.network_backend {
+                    sc_network::config::NetworkBackendType::Libp2p => {
+                        service::new_full::<sc_network::NetworkWorker<_, _>>(config, cli.consensus)
+                            .map_err(sc_cli::Error::Service)
+                    }
+                    sc_network::config::NetworkBackendType::Litep2p => service::new_full::<
+                        sc_network::Litep2pNetworkBackend,
+                    >(
+                        config, cli.consensus
+                    )
+                    .map_err(sc_cli::Error::Service),
+                }
+            })
         }
         _ => Ok(()),
     }
