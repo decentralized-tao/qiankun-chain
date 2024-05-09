@@ -3,7 +3,7 @@ use sc_cli::{ChainSpec, SubstrateCli};
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Qiankun Node".into()
+        "Qiankun Network".into()
     }
 
     fn impl_version() -> String {

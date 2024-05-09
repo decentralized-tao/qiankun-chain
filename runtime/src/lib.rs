@@ -5,16 +5,14 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 // FRAME import
 
+use frame_executive::Executive;
 use frame_support::{
     derive_impl,
     genesis_builder_helper::{build_state, get_preset},
-    parameter_types,
+    parameter_types, runtime,
     weights::{FixedFee, NoFee},
 };
-
 use frame_system::pallet_prelude::{ExtrinsicFor, HeaderFor};
-
-use frame_executive::Executive;
 
 // pallet import
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
@@ -36,7 +34,38 @@ use sp_weights::Weight;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-#[frame_support::runtime]
+#[sp_version::runtime_version]
+pub const VERSION: RuntimeVersion = RuntimeVersion {
+    spec_name: create_runtime_str!("qiankun-runtime"),
+    impl_name: create_runtime_str!("qiankun-runtime"),
+    authoring_version: 1,
+    spec_version: 1,
+    impl_version: 1,
+    apis: RUNTIME_API_VERSIONS,
+    transaction_version: 1,
+    state_version: 1,
+};
+
+#[cfg(feature = "std")]
+pub fn native_version() -> NativeVersion {
+    NativeVersion {
+        runtime_version: VERSION,
+        can_author_with: Default::default(),
+    }
+}
+
+type SignedExtra = (
+    frame_system::CheckNonZeroSender<Runtime>,
+    frame_system::CheckSpecVersion<Runtime>,
+    frame_system::CheckTxVersion<Runtime>,
+    frame_system::CheckGenesis<Runtime>,
+    frame_system::CheckEra<Runtime>,
+    frame_system::CheckNonce<Runtime>,
+    frame_system::CheckWeight<Runtime>,
+    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+);
+
+#[runtime]
 mod runtime {
     #[runtime::runtime]
     #[runtime::derive(
@@ -69,30 +98,9 @@ mod runtime {
     pub type TransactionPayment = pallet_transaction_payment;
 }
 
-// Types define
-type BlockNumber = u32;
-type Signature = MultiSignature;
-type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-type Address = sp_runtime::MultiAddress<AccountId, ()>;
-type Header = generic::Header<BlockNumber, BlakeTwo256>;
-type SignedExtra = (
-    frame_system::CheckNonZeroSender<Runtime>,
-    frame_system::CheckSpecVersion<Runtime>,
-    frame_system::CheckTxVersion<Runtime>,
-    frame_system::CheckGenesis<Runtime>,
-    frame_system::CheckEra<Runtime>,
-    frame_system::CheckNonce<Runtime>,
-    frame_system::CheckWeight<Runtime>,
-    pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-);
-type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, MultiSignature, SignedExtra>;
-
-pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-pub type OpaqueBlock = generic::Block<Header, OpaqueExtrinsic>;
-
-type RuntimeExecutive =
-    Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
+parameter_types! {
+    pub const Version: RuntimeVersion = VERSION;
+}
 
 #[derive_impl(frame_system::config_preludes::SolochainDefaultConfig)]
 impl frame_system::Config for Runtime {
@@ -118,6 +126,22 @@ impl pallet_transaction_payment::Config for Runtime {
     type WeightToFee = NoFee<<Self as pallet_balances::Config>::Balance>;
     type LengthToFee = FixedFee<1, <Self as pallet_balances::Config>::Balance>;
 }
+
+// Types define
+type Signature = MultiSignature;
+type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+type Address = sp_runtime::MultiAddress<AccountId, ()>;
+
+type UncheckedExtrinsic =
+    generic::UncheckedExtrinsic<Address, RuntimeCall, MultiSignature, SignedExtra>;
+
+type BlockNumber = u32;
+type Header = generic::Header<BlockNumber, BlakeTwo256>;
+type Block = generic::Block<Header, UncheckedExtrinsic>;
+pub type OpaqueBlock = generic::Block<Header, OpaqueExtrinsic>;
+
+type RuntimeExecutive =
+    Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -229,37 +253,13 @@ impl_runtime_apis! {
     }
 }
 
-#[sp_version::runtime_version]
-pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("qiankun-chain"),
-    impl_name: create_runtime_str!("qiankun-chain"),
-    authoring_version: 1,
-    spec_version: 1,
-    impl_version: 1,
-    apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
-    state_version: 1,
-};
-
-#[cfg(feature = "std")]
-pub fn native_version() -> NativeVersion {
-    NativeVersion {
-        runtime_version: VERSION,
-        can_author_with: Default::default(),
-    }
-}
-
-parameter_types! {
-    pub const Version: RuntimeVersion = VERSION;
-}
-
 pub mod interface {
 
     use super::Runtime;
     use frame_system;
 
     pub type Block = super::Block;
-    pub type OpaqueBlock = super::OpaqueBlock;
+    pub use super::OpaqueBlock;
     pub type AccountId = <Runtime as frame_system::Config>::AccountId;
     pub type Nonce = <Runtime as frame_system::Config>::Nonce;
     pub type Hash = <Runtime as frame_system::Config>::Hash;

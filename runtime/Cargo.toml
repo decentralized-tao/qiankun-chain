@@ -5,13 +5,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-parity-scale-codec = { version = "3.6.9", default-features = false, features = [
-    "derive",
-    "max-encoded-len",
-] }
-scale-info = { version = "2.11.2", default-features = false, features = [
-    "derive",
-] }
+parity-scale-codec = { version = "3.6.9", default-features = false }
+scale-info = { version = "2.11.2", default-features = false }
 
 # frame
 frame-support = { version = "33.0.0", default-features = false, features = [
@@ -29,12 +24,14 @@ pallet-timestamp = { version = "32.0.0", default-features = false }
 pallet-sudo = { version = "33.0.0", default-features = false }
 
 # primitives
-sp-core = { version = "32.0.0", default-features = false }
+sp-core = { version = "32.0.0", default-features = false, features = ["serde"] }
 sp-api = { version = "31.0.0", default-features = false }
 sp-runtime = { version = "36.0.0", default-features = false, features = [
     "serde",
 ] }
-sp-version = { version = "34.0.0", default-features = false }
+sp-version = { version = "34.0.0", default-features = false, features = [
+    "serde",
+] }
 sp-std = { version = "14.0.0", default-features = false }
 sp-block-builder = { version = "31.0.0", default-features = false }
 sp-inherents = { version = "31.0.0", default-features = false }
