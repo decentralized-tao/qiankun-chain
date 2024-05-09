@@ -3,38 +3,23 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-// FRAME import
-
-use frame_executive::Executive;
-use frame_support::{
-    derive_impl,
-    genesis_builder_helper::{build_state, get_preset},
-    parameter_types, runtime,
-    weights::{FixedFee, NoFee},
+use frame::{
+    deps::frame_support::{
+        genesis_builder_helper::{build_state, get_preset},
+        runtime,
+        weights::{FixedFee, NoFee},
+    },
+    prelude::*,
+    runtime::{
+        apis::{
+            self, impl_runtime_apis, ApplyExtrinsicResult, CheckInherentsResult,
+            ExtrinsicInclusionMode, OpaqueMetadata,
+        },
+        prelude::*,
+    },
 };
-use frame_system::pallet_prelude::{ExtrinsicFor, HeaderFor};
 
-// pallet import
-use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
-
-// Primitives import
-use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use sp_inherents::{CheckInherentsResult, InherentData};
-use sp_runtime::{
-    create_runtime_str, generic,
-    traits::{BlakeTwo256, IdentifyAccount, Verify},
-    transaction_validity::{TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, ExtrinsicInclusionMode, MultiSignature, OpaqueExtrinsic,
-};
-use sp_std::prelude::*;
-use sp_weights::Weight;
-
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
-#[sp_version::runtime_version]
+#[runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("qiankun-runtime"),
     impl_name: create_runtime_str!("qiankun-runtime"),
@@ -128,23 +113,16 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 // Types define
-type Signature = MultiSignature;
-type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-type Address = sp_runtime::MultiAddress<AccountId, ()>;
-
-type UncheckedExtrinsic =
-    generic::UncheckedExtrinsic<Address, RuntimeCall, MultiSignature, SignedExtra>;
-
-type BlockNumber = u32;
-type Header = generic::Header<BlockNumber, BlakeTwo256>;
-type Block = generic::Block<Header, UncheckedExtrinsic>;
-pub type OpaqueBlock = generic::Block<Header, OpaqueExtrinsic>;
+type Block = frame::runtime::types_common::BlockOf<Runtime, SignedExtra>;
+type Header = HeaderFor<Runtime>;
 
 type RuntimeExecutive =
     Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPalletsWithSystem>;
 
+use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
+
 impl_runtime_apis! {
-    impl sp_api::Core<Block> for Runtime {
+    impl apis::Core<Block> for Runtime {
         fn version() -> RuntimeVersion {
             VERSION
         }
@@ -158,7 +136,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl sp_api::Metadata<Block> for Runtime {
+    impl apis::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             OpaqueMetadata::new(Runtime::metadata().into())
         }
@@ -172,7 +150,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl sp_block_builder::BlockBuilder<Block> for Runtime {
+    impl apis::BlockBuilder<Block> for Runtime {
         fn apply_extrinsic(extrinsic: ExtrinsicFor<Runtime>) -> ApplyExtrinsicResult {
             RuntimeExecutive::apply_extrinsic(extrinsic)
         }
@@ -190,7 +168,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+    impl apis::TaggedTransactionQueue<Block> for Runtime {
         fn validate_transaction(
             source: TransactionSource,
             tx: ExtrinsicFor<Runtime>,
@@ -200,23 +178,23 @@ impl_runtime_apis! {
         }
     }
 
-    impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
+    impl apis::OffchainWorkerApi<Block> for Runtime {
         fn offchain_worker(header: &HeaderFor<Runtime>) {
             RuntimeExecutive::offchain_worker(header)
         }
     }
 
-    impl sp_session::runtime_api::SessionKeys<Block> for Runtime {
+    impl apis::SessionKeys<Block> for Runtime {
         fn generate_session_keys(_seed: Option<Vec<u8>>) -> Vec<u8> {
             Default::default()
         }
 
-        fn decode_session_keys(_encoded: Vec<u8>) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
+        fn decode_session_keys(_encoded: Vec<u8>) -> Option<Vec<(Vec<u8>, apis::KeyTypeId)>> {
             Default::default()
         }
     }
 
-    impl frame_system_rpc_runtime_api::AccountNonceApi<Block, interface::AccountId, interface::Nonce> for Runtime {
+    impl apis::AccountNonceApi<Block, interface::AccountId, interface::Nonce> for Runtime {
         fn account_nonce(account: interface::AccountId) -> interface::Nonce {
             System::account_nonce(account)
         }
@@ -256,10 +234,10 @@ impl_runtime_apis! {
 pub mod interface {
 
     use super::Runtime;
-    use frame_system;
+    use frame::deps::frame_system;
 
     pub type Block = super::Block;
-    pub use super::OpaqueBlock;
+    pub use frame::runtime::types_common::OpaqueBlock;
     pub type AccountId = <Runtime as frame_system::Config>::AccountId;
     pub type Nonce = <Runtime as frame_system::Config>::Nonce;
     pub type Hash = <Runtime as frame_system::Config>::Hash;
