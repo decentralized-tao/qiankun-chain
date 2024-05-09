@@ -6,14 +6,36 @@ publish = false
 
 
 [dependencies]
-clap = { version = "4.5.4", features = ["derive"] }
+clap = { version = "4.5.3", features = ["derive"] }
 futures = { version = "0.3.30", features = ["thread-pool"] }
 futures-timer = "3.0.1"
 jsonrpsee = { version = "0.22", features = ["server"] }
 serde_json = "1.0.114"
 
-# runtime
-runtime = { package = "qiankun-runtime", path = "../runtime" }
+
+# core client
+sc-cli = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-executor = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-network = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-service = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-consensus-manual-seal = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-offchain = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+
+# primitives
+sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git" }
 
 # substrate utils
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk.git" }
@@ -23,33 +45,7 @@ frame = { package = "polkadot-sdk-frame", git = "https://github.com/paritytech/p
     "experimental",
     "runtime",
 ] }
-
-# primitives
-sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-
-
-# core client
-sc-cli = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-service = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-executor = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-consensus-manual-seal = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-network = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-offchain = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk.git" }
-sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk.git" }
+runtime = { package = "qiankun-runtime", path = "../runtime" }
 
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk.git" }
