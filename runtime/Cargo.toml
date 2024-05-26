@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 parity-scale-codec = { version = "3.6.12", default-features = false }
-scale-info = { version = "2.6.0", default-features = false }
+scale-info = { version = "2.11.2", default-features = false }
 
 # frame
 frame = { package = "polkadot-sdk-frame", git = "https://github.com/paritytech/polkadot-sdk.git", default-features = false, features = [
