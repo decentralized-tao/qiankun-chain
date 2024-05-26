@@ -26,7 +26,7 @@ pub fn developement_config() -> Result<ChainSpec, String> {
 }
 
 fn testnet_genesis() -> Value {
-    use bounded_collections::Get;
+    use frame::traits::Get;
     use runtime::interface::{Balance, MinimumBalance};
 
     let endowment = <MinimumBalance as Get<Balance>>::get().max(1) * 1000;
